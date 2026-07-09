@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "Vocablify AI",
+  "version": "4.0",
+  "description": "Highlight to learn meanings, get GPT-based context, summaries, and quiz yourself — all in one sleek popup.",
+  
+  "permissions": [
+    "storage",
+    "scripting",
+    "activeTab",
+    "contextMenus"
+  ],
+  
+  "host_permissions": [
+    "https://api.dictionaryapi.dev/*",
+    "https://api.openai.com/*",
+    "https://en.wikipedia.org/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_icon": {
+      "16": "logo.png",
+      "48": "logo.png",
+      "128": "logo.png"
+    },
+    "default_title": "Vocablify AI",
+    "default_popup": "popup.html"
+  },
+
+  "options_page": "options.html",
+
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  }
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Vocablify Settings</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #0f172a;
+        color: #f1f5f9;
+        padding: 20px;
+      }
+      input, button {
+        border-radius: 6px;
+        border: none;
+        padding: 8px;
+        margin-top: 8px;
+        width: 100%;
+      }
+      button {
+        background: #3b82f6;
+        color: white;
+        cursor: pointer;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Vocablify Settings ⚙️</h2>
+    <label>
+      OpenAI API Key:
+      <input type="password" id="apiKey" placeholder="sk-..." />
+    </label>
+
+    <label>
+      <input type="checkbox" id="useAI" /> Enable AI + Web Search meanings
+    </label>
+
+    <button id="save">Save</button>
+
+    <p id="status"></p>
+
+    <script src="options.js"></script>
+  </body>
+</html>

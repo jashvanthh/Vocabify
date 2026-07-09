@@ -1,0 +1,143 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Vocablify</title>
+  <style>
+    body {
+      font-family: 'Inter', Arial, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      margin: 14px;
+      width: 320px;
+      transition: all 0.3s ease;
+    }
+    h1 { font-size: 18px; color: #38bdf8; margin: 0; }
+    .muted { color: #64748b; font-size: 13px; }
+    button {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      transition: 0.2s ease;
+    }
+    button:hover { transform: scale(1.04); }
+    #export { background: #10b981; color: white; }
+    #quiz { background: #3b82f6; color: white; }
+    #saved { background: #f59e0b; color: white; }
+    #clear { background: #ef4444; color: white; }
+    .item { border-bottom: 1px solid #1e293b; padding: 8px 0; }
+    .word { font-weight: bold; color: #f8fafc; }
+    .meaning { color: #94a3b8; font-size: 13px; margin-top: 4px; }
+    .part { color: #38bdf8; font-size: 12px; }
+    .time { color: #64748b; font-size: 11px; margin-top: 4px; }
+    .top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .top-bar img { border-radius: 6px; }
+    .btn-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <img src="logo.png" width="32" height="32">
+    <div>
+      <h1>Vocablify</h1>
+      <div style="color:#64748b;font-size:12px;">“Understand words where you see them.”</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button id="quiz">Quiz</button>
+    <button id="saved">Saved Words</button>
+  </div>
+
+  <div id="home-view">
+    <div class="muted">Highlight a word on any webpage to see its meaning.</div>
+  </div>
+
+  <div id="saved-view" class="hidden">
+    <div id="list" class="muted" style="max-height:260px;overflow:auto;border-top:1px solid #1e293b;padding-top:8px;">Loading...</div>
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="export">Export JSON</button>
+      <button id="clear">Clear All</button>
+      <button id="back">Back</button>
+    </div>
+  </div>
+
+  <script>
+    const homeView = document.getElementById("home-view");
+    const savedView = document.getElementById("saved-view");
+    const listContainer = document.getElementById("list");
+
+    function escapeHtml(str) {
+      return str ? String(str).replace(/[&<>"']/g, (m) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[m])) : "";
+    }
+
+    function renderList(list) {
+      if (!list.length) {
+        listContainer.innerHTML = "<div class='muted'>No saved words yet.</div>";
+        return;
+      }
+      listContainer.innerHTML = list.map(
+        (w, i) => `
+          <div class="item">
+            <div class="word">${escapeHtml(w.word)} <span class="part">${escapeHtml(w.part || '')}</span></div>
+            <div class="meaning">${escapeHtml(w.meaning)}</div>
+            <div class="time">${new Date(w.savedAt).toLocaleString()}</div>
+            <button data-idx="${i}" class="del-btn" style="margin-top:4px;background:#ef4444;color:white;border:none;border-radius:6px;padding:4px 6px;font-size:11px;cursor:pointer;">Delete</button>
+          </div>`
+      ).join("");
+
+      document.querySelectorAll(".del-btn").forEach(btn => {
+        btn.onclick = () => {
+          const idx = Number(btn.dataset.idx);
+          chrome.storage.local.get({ vocablify_words: [] }, (res) => {
+            const arr = res.vocablify_words || [];
+            arr.splice(idx, 1);
+            chrome.storage.local.set({ vocablify_words: arr }, () => renderList(arr));
+          });
+        };
+      });
+    }
+
+    document.getElementById("saved").onclick = async () => {
+  homeView.classList.add("hidden");
+  savedView.classList.remove("hidden");
+
+  chrome.runtime.sendMessage({ action: "getSavedWords" }, (words) => {
+    if (chrome.runtime.lastError) {
+      listContainer.innerHTML = "<div class='muted'>Error reading saved words.</div>";
+      return;
+    }
+    console.log("📦 Loaded words from service worker:", words);
+    renderList(words || []);
+  });
+};
+
+
+    document.getElementById("back").onclick = () => {
+      savedView.classList.add("hidden");
+      homeView.classList.remove("hidden");
+    };
+
+    document.getElementById("clear").onclick = () => {
+      if (confirm("Clear all saved words?")) {
+        chrome.storage.local.set({ vocablify_words: [] }, () => renderList([]));
+      }
+    };
+
+    document.getElementById("export").onclick = async () => {
+      const res = await chrome.storage.local.get({ vocablify_words: [] });
+      const json = JSON.stringify(res.vocablify_words, null, 2);
+      chrome.runtime.sendMessage({ action: "exportWords", data: json });
+      alert("Export started! Check your downloads.");
+    };
+
+    document.getElementById("quiz").onclick = () => alert("Quiz mode coming soon!");
+  </script>
+</body>
+</html>
